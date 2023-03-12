@@ -12,8 +12,10 @@ class Train
     string end;
     int endDistance;
 
-    //coach
-    
+    Train()
+{
+
+}    
 
     Train(string trainNo, string start, int startDistance, string end, int endDistance)
     {
@@ -25,8 +27,6 @@ class Train
         this->end = end;
         this->endDistance = endDistance;
     }
-
-   
 
     void print(Train *t)
     {
@@ -40,7 +40,7 @@ class Train
 
 };
 
-class Coach
+class Coach : public Train
 {
     public:
     unordered_map<string,int> S;
@@ -48,28 +48,69 @@ class Coach
     unordered_map<string,int> A;
     unordered_map<string,int> H;
 
-     void setCoach(string coachName, int sloat)
+    Coach()
     {
+
+    }
+
+     void setcoach(string coachName, int sloat)
+    {
+        unordered_map<string,int> temp;
+        temp[coachName]=sloat;
+       // cout<<temp[coachName]<<endl;
         if(coachName[0] == 'S')
         {
-            S[coachName]=sloat;
+            this->S.insert({coachName,sloat});
         }
         else if(coachName[0] == 'B')
         {
-            B[coachName]=sloat;
+            this->B.insert({coachName,sloat});
         }
          else if(coachName[0] == 'A')
         {
-            A[coachName]=sloat;
+            this->A.insert({coachName,sloat});
         }
          else if(coachName[0] == 'H')
         {
-            H[coachName]=sloat;
+            this->H.insert({coachName,sloat});
         }
     }
 
 
 };
+
+class Ticket : public Coach
+{
+    public:
+   static int pnr_counter; 
+     Ticket()
+     {
+
+     }
+   Ticket(string coach,int totalNeed, Train objtrain)
+   {
+        int distance = objtrain.endDistance - objtrain.startDistance;
+        if(coach == "SL")
+        {
+            cout<<pnr_counter<<" "<< 1*totalNeed*distance<<endl;
+        }
+         if(coach == "3A")
+        {
+            cout<<pnr_counter<<" "<<2*totalNeed*distance<<endl;
+        }
+         if(coach == "2A")
+        {
+            cout<<pnr_counter<<" "<<3*totalNeed*distance<<endl;
+        }
+         if(coach == "1A")
+        {
+            cout<<pnr_counter<<" "<<4*totalNeed*distance<<endl;
+        }
+        pnr_counter++;
+   }
+};
+
+int Ticket::pnr_counter = 100000001; // starting PNR number
 
 vector<string> splitInput(string input, char ch)
 {
@@ -94,15 +135,38 @@ vector<string> splitInput(string input, char ch)
     return ans;
 
 }
+
+
+bool isAvail(Coach objCoach, string coach, int totalNeed)
+{
+    for(int i = 0; i < objCoach.S.size(); i++)
+    {
+        string ch = "S1";
+        if( (objCoach.S[ch] -= totalNeed ) >= 0)
+        {
+            objCoach.S[ch] -= totalNeed;
+        }
+        else
+        {
+            return false;
+        }  
+        ch[1]+=1;      
+   }
+   return true;
+}
+
 int main()
 {
 
     int noOfTrain;
     cin>>noOfTrain;
-    string objName = "t1";
     string input1;
     string input2;
     cin.ignore();
+    vector<Train> objTrain;
+    vector<Coach> objCoach;
+    
+    //step 1: input train details
     while(noOfTrain--)
     {
         getline(cin,input1);
@@ -120,24 +184,77 @@ int main()
          int endDistance = stoi(temp2);
 
         Train *t1 = new Train(trainNo,start,startDistance,end,endDistance); 
-        objName[1] += 1;
-        
-        getline(cin,input1);
+        objTrain.push_back(*t1);
+    
+    
         Coach *c1 = new Coach();
-        vector<string> coachDetails = splitInput(input1,' ');
+        vector<string> coachDetails = splitInput(input2,' ');
         for(int i = 1; i < coachDetails.size(); i++)
         {
             vector<string> coach = splitInput(coachDetails[i],'-');
             string coachName = coach[0];
             string temp = coach[1];
             int slot = stoi(temp);
-            c1->setCoach(coachName,slot);
+            c1->setcoach(coachName,slot);
 
-           
-            
         }
+        objCoach.push_back(*c1);
 
+     // cout<<objTrain.size();
+    }
+    // step 2 : booking 
+    while(true)
+    {
+        string input;
+        getline(cin,input);
+        vector<string> booking = splitInput(input,' ');
+        int count = 0;
+        for(auto train : objTrain)
+        {
+           count++;
+            if(train.start == booking[0] && train.end == booking[1])
+            {
+                 //objCoach[count-1]
+                 string temp = booking[4];
+                 int totalNeed = stoi(temp);
+               //  cout<<"total"<<totalNeed;
+                 if(booking[3] == "SL" && isAvail(objCoach[count-1],"SL",totalNeed))
+                 {
+                    Ticket *objticket = new Ticket("SL",totalNeed,train);
+                    break;
+                 }
+                else if(booking[3] == "3A" && isAvail(objCoach[count-1],"3A",totalNeed))
+                 {
+                    Ticket *objticket = new Ticket("3A",totalNeed,train);
+                    break;
 
+                 }
+                else if(booking[3] == "2A" && isAvail(objCoach[count-1],"2A",totalNeed))
+                 {
+                    Ticket *objticket = new Ticket("2A",totalNeed,train);
+                    break;
+
+                 }
+                else if(booking[3] == "1A" && isAvail(objCoach[count-1],"1A",totalNeed))
+                 {
+                    Ticket *objticket = new Ticket("1A",totalNeed,train);
+                    break;
+
+                 }
+                 else
+                 {
+                    cout<<"No Seats Available"<<endl;
+                    break;
+
+                 }
+            }
+             // no any train for that request.
+            else
+            {
+                cout<<"No Trains Available"<<endl;
+                break;
+            }
+        }
     }
 
 
